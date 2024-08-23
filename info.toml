@@ -11,4 +11,4 @@ blocks = [ "Plugin_CheckpointCounter" ]
 [script]
 module = "CP"
 exports = [ "CheckpointAPI.as" ]
-optional_dependencies = [ "PlayerState" ]
+optional_dependencies = [ "PlayerState", "MLHook", "MLFeedRaceData" ]

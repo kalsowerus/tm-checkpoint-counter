@@ -29,7 +29,9 @@ namespace CP {
 #endif
 	
 	void Main() {
-#if TMNEXT && DEPENDENCY_PLAYERSTATE
+#if TMNEXT && DEPENDENCY_MLFEEDRACEDATA
+		print ("CheckpointCounter lib is using MLFeed for checkpoint data");
+#elif TMNEXT && DEPENDENCY_PLAYERSTATE
 		print("CheckpointCounter lib is using PlayerState for checkpoint data");
 #elif TMNEXT
 		print("CheckpointCounter lib is not using PlayerState for checkpoint data");
@@ -105,7 +107,27 @@ namespace CP {
 		}
 		_inGame = true;
 		
-#if DEPENDENCY_PLAYERSTATE
+#if DEPENDENCY_MLFEEDRACEDATA
+		// PlayerState is no longer maintained, use MLFeed if available
+		auto raceData = MLFeed::GetRaceData_V4();
+		auto cpInfo = raceData.GetPlayer_V4(MLFeed::LocalPlayersName);
+		
+		if (cpInfo !is null) {
+			// cpInfo.CurrentLap seems to stop counting after 3 laps, calculate lap count manually
+			auto lapCount = cpInfo.CpCount / (raceData.CpCount + 1);
+			
+			_curLap = lapCount;
+			_curCP = cpInfo.CpCount - (lapCount * (raceData.CpCount + 1));
+			auto cpTimes = cpInfo.CpTimes;
+			_curCPLapTime = cpInfo.LastCpTime - cpTimes[cpTimes.Length - _curCP - 1];
+			_curCPRaceTime = cpInfo.LastCpTime;
+		} else {
+			_curCP = 0;
+			_curCPLapTime = 0;
+			_curCPRaceTime = 0;
+			_curLap = 0;
+		}
+#elif DEPENDENCY_PLAYERSTATE
 		// PlayerState is heavier, but allows detecting multiple CPs in one frame, as well as getting lap times
 		if(PlayerState::GetRaceData().PlayerState == PlayerState::EPlayerState::EPlayerState_Driving) {
 			auto info = PlayerState::GetRaceData().dPlayerInfo;
